@@ -1,183 +1,182 @@
 import { useState } from 'react'
-import { Plus, Upload, Edit, Trash2, Image as ImageIcon } from 'lucide-react'
+import { Plus, Upload, Edit, Trash2, Image as ImageIcon, Package } from 'lucide-react'
 import { Button } from '@/components/forms'
-import { DataTable, StatusBadge, SearchInput, Modal } from '@/components/shared'
+import { ProductForm, CategoryModal, type ProductFormData } from '@/components/forms'
+import { DataTable, StatusBadge, SearchInput } from '@/components/shared'
 import { cn, formatCurrency } from '@/lib/utils'
-
-interface Product {
-  id: string
-  sku: string
-  name: string
-  brand: string
-  category: string
-  sellingPrice: number
-  unit: string
-  currentStock: number
-  minStockLimit: number
-  status: 'active' | 'inactive' | 'archived'
-  imageUrl?: string
-}
-
-interface Category {
-  id: string
-  name: string
-  type: 'product' | 'supplier'
-}
-
-const mockCategories: Category[] = [
-  { id: '1', name: 'Material Konstruksi', type: 'product' },
-  { id: '2', name: 'Besi Beton', type: 'product' },
-  { id: '3', name: 'Aksesoris', type: 'product' },
-  { id: '4', name: 'Finishing', type: 'product' },
-]
-
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    sku: 'RRI-MTL-001',
-    name: 'Steel Beam H-200',
-    brand: 'IndoSteel',
-    category: 'Material Konstruksi',
-    sellingPrice: 2500000,
-    unit: 'PCS',
-    currentStock: 150,
-    minStockLimit: 20,
-    status: 'active',
-  },
-  {
-    id: '2',
-    sku: 'RRI-MTL-012',
-    name: 'Reinforcement Bar 12mm',
-    brand: 'KS',
-    category: 'Besi Beton',
-    sellingPrice: 85000,
-    unit: 'BUNDLE',
-    currentStock: 45,
-    minStockLimit: 10,
-    status: 'active',
-  },
-  {
-    id: '3',
-    sku: 'RRI-ACC-221',
-    name: 'Concrete Spacer 50mm',
-    brand: 'Prima',
-    category: 'Aksesoris',
-    sellingPrice: 15000,
-    unit: 'BAG',
-    currentStock: 500,
-    minStockLimit: 100,
-    status: 'active',
-  },
-  {
-    id: '4',
-    sku: 'RRI-FIN-003',
-    name: 'Cat Dinding Eksterior 20L',
-    brand: 'Nippon Paint',
-    category: 'Finishing',
-    sellingPrice: 485000,
-    unit: 'PAIL',
-    currentStock: 3,
-    minStockLimit: 10,
-    status: 'active',
-  },
-]
-
-const columns = [
-  {
-    key: 'image',
-    header: '',
-    className: 'w-16',
-    render: (row: Product) => (
-      <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
-        {row.imageUrl ? (
-          <img src={row.imageUrl} alt={row.name} className="w-full h-full object-cover rounded-lg" />
-        ) : (
-          <ImageIcon className="w-5 h-5 text-on-surface-variant" />
-        )}
-      </div>
-    ),
-  },
-  {
-    key: 'sku',
-    header: 'SKU',
-    render: (row: Product) => (
-      <span className="font-mono text-xs bg-surface-container px-2 py-1 rounded">{row.sku}</span>
-    ),
-  },
-  {
-    key: 'name',
-    header: 'Nama Produk',
-    render: (row: Product) => (
-      <div>
-        <p className="font-bold text-on-surface">{row.name}</p>
-        <p className="text-xs text-on-surface-variant">{row.brand}</p>
-      </div>
-    ),
-  },
-  {
-    key: 'category',
-    header: 'Kategori',
-    render: (row: Product) => (
-      <span className="text-on-surface-variant">{row.category}</span>
-    ),
-  },
-  {
-    key: 'price',
-    header: 'Harga Jual',
-    className: 'text-right',
-    render: (row: Product) => (
-      <span className="font-bold text-on-surface">{formatCurrency(row.sellingPrice)}</span>
-    ),
-  },
-  {
-    key: 'stock',
-    header: 'Stok',
-    className: 'text-center',
-    render: (row: Product) => (
-      <div>
-        <span className={cn(
-          "font-bold",
-          row.currentStock <= row.minStockLimit ? "text-error" : "text-on-surface"
-        )}>
-          {row.currentStock}
-        </span>
-        <span className="text-on-surface-variant text-xs"> / {row.unit}</span>
-      </div>
-    ),
-  },
-  {
-    key: 'status',
-    header: 'Status',
-    render: (row: Product) => <StatusBadge status={row.status} />,
-  },
-  {
-    key: 'actions',
-    header: '',
-    className: 'w-20',
-    render: () => (
-      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button className="p-2 text-slate-400 hover:text-primary hover:bg-white rounded-lg transition-all" title="Edit">
-          <Edit className="w-4 h-4" />
-        </button>
-        <button className="p-2 text-slate-400 hover:text-error hover:bg-white rounded-lg transition-all" title="Delete">
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-    ),
-  },
-]
+import {
+  useProducts,
+  useCategories,
+  useSuppliers,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+  useCreateCategory,
+  useDeleteCategory,
+} from '@/lib/hooks'
+import type { Product, Category, Supplier } from '@/db/schema'
 
 export default function Products() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
-  const [categories, setCategories] = useState<Category[]>(mockCategories)
-  const [newCategoryName, setNewCategoryName] = useState('')
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  
+  const { data: products = [], isLoading: isLoadingProducts } = useProducts()
+  const { data: categories = [] } = useCategories('product')
+  const { data: suppliers = [] } = useSuppliers()
+  
+  const createProduct = useCreateProduct()
+  const updateProduct = useUpdateProduct()
+  const deleteProduct = useDeleteProduct()
+  const createCategory = useCreateCategory()
+  const deleteCategory = useDeleteCategory()
 
-  const filteredProducts = mockProducts.filter((product) =>
+  const handleOpenAdd = () => {
+    setSelectedProduct(null)
+    setIsProductModalOpen(true)
+  }
+
+  const handleOpenEdit = (product: Product & { category?: Category; supplier?: Supplier }) => {
+    setSelectedProduct(product)
+    setIsProductModalOpen(true)
+  }
+
+  const handleSubmitProduct = async (data: ProductFormData) => {
+    const productData = {
+      ...data,
+      sellingPrice: String(data.sellingPrice),
+      purchasePrice: data.purchasePrice ? String(data.purchasePrice) : null,
+    }
+    
+    if (selectedProduct) {
+      await updateProduct.mutateAsync({ id: selectedProduct.id, ...productData })
+    } else {
+      await createProduct.mutateAsync(productData)
+    }
+  }
+
+  const handleDeleteProduct = async (id: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+      await deleteProduct.mutateAsync(id)
+    }
+  }
+
+  const handleAddCategory = async (name: string) => {
+    await createCategory.mutateAsync({ name, type: 'product' })
+  }
+
+  const handleDeleteCategory = async (id: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus kategori ini?')) {
+      await deleteCategory.mutateAsync({ id, type: 'product' })
+    }
+  }
+
+  const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchQuery.toLowerCase())
+    product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (product as Product & { category?: Category }).category?.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const totalProducts = products.length
+  const activeProducts = products.filter(p => p.status === 'active').length
+  const lowStockProducts = products.filter(p => (p.currentStock ?? 0) <= (p.minStockLimit ?? 0)).length
+  const inactiveProducts = products.filter(p => p.status === 'inactive').length
+
+  const columns = [
+    {
+      key: 'image',
+      header: '',
+      className: 'w-16',
+      render: (row: Product & { category?: Category; supplier?: Supplier }) => (
+        <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden">
+          {row.imageUrl ? (
+            <img src={row.imageUrl} alt={row.name} className="w-full h-full object-cover" />
+          ) : (
+            <ImageIcon className="w-5 h-5 text-on-surface-variant" />
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'sku',
+      header: 'SKU',
+      render: (row: Product) => (
+        <span className="font-mono text-xs bg-surface-container px-2 py-1 rounded">{row.sku}</span>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Nama Produk',
+      render: (row: Product & { category?: Category; supplier?: Supplier }) => (
+        <div>
+          <p className="font-bold text-on-surface">{row.name}</p>
+          <p className="text-xs text-on-surface-variant">{row.brand || '-'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'category',
+      header: 'Kategori',
+      render: (row: Product & { category?: Category }) => (
+        <span className="text-on-surface-variant">
+          {row.category?.name || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'price',
+      header: 'Harga Jual',
+      className: 'text-right',
+      render: (row: Product) => (
+        <span className="font-bold text-on-surface">{formatCurrency(Number(row.sellingPrice))}</span>
+      ),
+    },
+    {
+      key: 'stock',
+      header: 'Stok',
+      className: 'text-center',
+      render: (row: Product) => (
+        <div>
+          <span className={cn(
+            "font-bold",
+            (row.currentStock ?? 0) <= (row.minStockLimit ?? 0) ? "text-error" : "text-on-surface"
+          )}>
+            {row.currentStock ?? 0}
+          </span>
+          <span className="text-on-surface-variant text-xs"> / {row.unit}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (row: Product) => <StatusBadge status={row.status as 'active' | 'inactive' | 'archived'} />,
+    },
+    {
+      key: 'actions',
+      header: '',
+      className: 'w-20',
+      render: (row: Product) => (
+        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => handleOpenEdit(row as Product & { category?: Category; supplier?: Supplier })}
+            className="p-2 text-slate-400 hover:text-primary hover:bg-white rounded-lg transition-all"
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDeleteProduct(row.id)}
+            className="p-2 text-slate-400 hover:text-error hover:bg-white rounded-lg transition-all"
+            title="Delete"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      ),
+    },
+  ]
 
   return (
     <div className="p-12 max-w-7xl mx-auto">
@@ -198,7 +197,7 @@ export default function Products() {
           <Button variant="outline" leftIcon={<Upload className="w-4 h-4" />}>
             Export CSV
           </Button>
-          <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setIsModalOpen(true)}>
+          <Button leftIcon={<Plus className="w-4 h-4" />} onClick={handleOpenAdd}>
             Add Produk
           </Button>
         </div>
@@ -209,28 +208,25 @@ export default function Products() {
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm flex flex-col justify-between h-32">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Produk</p>
           <div className="flex items-end gap-2">
-            <span className="text-3xl font-black text-on-surface">2,482</span>
-            <span className="text-green-600 text-xs font-bold mb-1 flex items-center">
-              <span className="material-symbols-outlined text-sm">arrow_upward</span> 12%
-            </span>
+            <span className="text-3xl font-black text-on-surface">{totalProducts}</span>
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm flex flex-col justify-between h-32">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Aktif</p>
           <div className="flex items-end gap-2">
-            <span className="text-3xl font-black text-on-surface">2,120</span>
+            <span className="text-3xl font-black text-on-surface">{activeProducts}</span>
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm flex flex-col justify-between h-32">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Stok Rendah</p>
           <div className="flex items-end gap-2">
-            <span className="text-3xl font-black text-error">24</span>
+            <span className="text-3xl font-black text-error">{lowStockProducts}</span>
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm flex flex-col justify-between h-32">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nonaktif</p>
           <div className="flex items-end gap-2">
-            <span className="text-3xl font-black text-on-surface">338</span>
+            <span className="text-3xl font-black text-on-surface">{inactiveProducts}</span>
           </div>
         </div>
       </div>
@@ -245,6 +241,13 @@ export default function Products() {
             className="w-80"
           />
           <div className="flex gap-4">
+            <button
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-lg text-xs font-medium text-slate-600 border border-slate-100 hover:bg-surface-container transition-colors"
+            >
+              <Package className="w-4 h-4" />
+              Kelola Kategori
+            </button>
             <button className="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-lg text-xs font-medium text-slate-600 border border-slate-100">
               <span className="material-symbols-outlined text-sm">filter_list</span>
               Filter: Semua
@@ -254,233 +257,36 @@ export default function Products() {
 
         <DataTable
           columns={columns}
-          data={filteredProducts}
+          data={filteredProducts as (Product & { category?: Category; supplier?: Supplier })[]}
           keyExtractor={(row) => row.id}
           emptyMessage="Tidak ada produk yang ditemukan"
+          isLoading={isLoadingProducts}
         />
       </div>
 
-      {/* Add Product Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Tambah Produk Baru"
-        description="Lengkapi informasi produk di bawah ini"
-        size="lg"
-      >
-        <div className="space-y-6">
-          {/* Image Upload */}
-          <div className="flex gap-6">
-            <div className="w-32 h-32 bg-surface-container rounded-xl border-2 border-dashed border-outline-variant/30 flex items-center justify-center cursor-pointer hover:border-primary/40 transition-colors group">
-              <div className="text-center">
-                <Upload className="w-8 h-8 text-on-surface-variant mx-auto mb-2 group-hover:text-primary transition-colors" />
-                <p className="text-xs text-on-surface-variant">Upload Gambar</p>
-              </div>
-            </div>
-            <div className="flex-1 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-                    SKU / Kode Produk <span className="text-error">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full bg-surface-container-low border-0 focus:ring-2 focus:ring-primary/20 rounded-md py-2.5 px-4 text-sm font-medium"
-                    placeholder="RRI-XXX-001"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-                    Merek
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full bg-surface-container-low border-0 focus:ring-2 focus:ring-primary/20 rounded-md py-2.5 px-4 text-sm font-medium"
-                    placeholder="Nama Merek"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-                  Nama Produk <span className="text-error">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="w-full bg-surface-container-low border-0 focus:ring-2 focus:ring-primary/20 rounded-md py-2.5 px-4 text-sm font-medium"
-                  placeholder="Nama lengkap produk"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-                Kategori <span className="text-error">*</span>
-              </label>
-              <div className="flex gap-2">
-                <select className="flex-1 bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium">
-                  <option value="">Pilih Kategori</option>
-                  <option value="material">Material Konstruksi</option>
-                  <option value="besi">Besi Beton</option>
-                  <option value="aksesoris">Aksesoris</option>
-                </select>
-                <button 
-                  className="px-3 py-2 bg-surface-container text-primary rounded-md hover:bg-surface-container-high transition-colors"
-                  onClick={() => setIsCategoryModalOpen(true)}
-                  title="Kelola Kategori"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-                Supplier
-              </label>
-              <select className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium">
-                <option value="">Pilih Supplier</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-                Harga Jual <span className="text-error">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">Rp</span>
-                <input
-                  type="text"
-                  className="w-full bg-surface-container-low border-0 rounded-md py-2.5 pl-10 pr-4 text-sm font-medium text-right"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-                Satuan <span className="text-error">*</span>
-              </label>
-              <select className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium">
-                <option value="PCS">PCS</option>
-                <option value="BUNDLE">BUNDLE</option>
-                <option value="BAG">BAG</option>
-                <option value="PAIL">PAIL</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">
-                Stok Awal
-              </label>
-              <input
-                type="number"
-                className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium"
-                placeholder="0"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input type="checkbox" id="contractProduct" className="w-4 h-4 rounded border-slate-300" />
-            <label htmlFor="contractProduct" className="text-sm font-medium text-on-surface">
-              Produk Kontrak (Prioritas harga dari tabel kontrak)
-            </label>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-              Batal
-            </Button>
-            <Button>
-              Simpan Produk
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      {/* Product Form Modal */}
+      <ProductForm
+        isOpen={isProductModalOpen}
+        onClose={() => {
+          setIsProductModalOpen(false)
+          setSelectedProduct(null)
+        }}
+        onSubmit={handleSubmitProduct}
+        product={selectedProduct}
+        categories={categories}
+        suppliers={suppliers}
+        isLoading={createProduct.isPending || updateProduct.isPending}
+      />
 
       {/* Category Management Modal */}
-      <Modal
+      <CategoryModal
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
-        title="Kelola Kategori"
-        description="Tambah atau hapus kategori produk"
-        size="md"
-      >
-        <div className="space-y-6">
-          {/* Add New Category */}
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              placeholder="Nama kategori baru..."
-              className="flex-1 bg-surface-container-low border-0 focus:ring-2 focus:ring-primary/20 rounded-md py-2.5 px-4 text-sm font-medium"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newCategoryName.trim()) {
-                  const newCategory: Category = {
-                    id: String(Date.now()),
-                    name: newCategoryName.trim(),
-                    type: 'product'
-                  }
-                  setCategories([...categories, newCategory])
-                  setNewCategoryName('')
-                }
-              }}
-            />
-            <Button
-              onClick={() => {
-                if (newCategoryName.trim()) {
-                  const newCategory: Category = {
-                    id: String(Date.now()),
-                    name: newCategoryName.trim(),
-                    type: 'product'
-                  }
-                  setCategories([...categories, newCategory])
-                  setNewCategoryName('')
-                }
-              }}
-              disabled={!newCategoryName.trim()}
-            >
-              Tambah
-            </Button>
-          </div>
-
-          {/* Category List */}
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-              Kategori Produk ({categories.length})
-            </p>
-            <div className="max-h-64 overflow-y-auto space-y-2">
-              {categories.map((category) => (
-                <div
-                  key={category.id}
-                  className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg hover:bg-surface-container transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary text-lg">folder</span>
-                    <span className="text-sm font-medium text-on-surface">{category.name}</span>
-                  </div>
-                  <button
-                    onClick={() => setCategories(categories.filter(c => c.id !== category.id))}
-                    className="p-2 text-slate-400 hover:text-error hover:bg-error-container/20 rounded-lg transition-colors"
-                    title="Hapus Kategori"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="flex justify-end pt-4 border-t border-slate-100">
-            <Button onClick={() => setIsCategoryModalOpen(false)}>
-              Selesai
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        categories={categories}
+        onAdd={handleAddCategory}
+        onDelete={handleDeleteCategory}
+        isLoading={createCategory.isPending || deleteCategory.isPending}
+      />
     </div>
   )
 }
