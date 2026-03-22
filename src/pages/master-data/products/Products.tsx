@@ -18,6 +18,19 @@ interface Product {
   imageUrl?: string
 }
 
+interface Category {
+  id: string
+  name: string
+  type: 'product' | 'supplier'
+}
+
+const mockCategories: Category[] = [
+  { id: '1', name: 'Material Konstruksi', type: 'product' },
+  { id: '2', name: 'Besi Beton', type: 'product' },
+  { id: '3', name: 'Aksesoris', type: 'product' },
+  { id: '4', name: 'Finishing', type: 'product' },
+]
+
 const mockProducts: Product[] = [
   {
     id: '1',
@@ -157,6 +170,9 @@ const columns = [
 export default function Products() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
+  const [categories, setCategories] = useState<Category[]>(mockCategories)
+  const [newCategoryName, setNewCategoryName] = useState('')
 
   const filteredProducts = mockProducts.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -309,7 +325,11 @@ export default function Products() {
                   <option value="besi">Besi Beton</option>
                   <option value="aksesoris">Aksesoris</option>
                 </select>
-                <button className="px-3 py-2 bg-surface-container text-primary rounded-md hover:bg-surface-container-high transition-colors">
+                <button 
+                  className="px-3 py-2 bg-surface-container text-primary rounded-md hover:bg-surface-container-high transition-colors"
+                  onClick={() => setIsCategoryModalOpen(true)}
+                  title="Kelola Kategori"
+                >
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
@@ -374,6 +394,89 @@ export default function Products() {
             </Button>
             <Button>
               Simpan Produk
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Category Management Modal */}
+      <Modal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        title="Kelola Kategori"
+        description="Tambah atau hapus kategori produk"
+        size="md"
+      >
+        <div className="space-y-6">
+          {/* Add New Category */}
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="Nama kategori baru..."
+              className="flex-1 bg-surface-container-low border-0 focus:ring-2 focus:ring-primary/20 rounded-md py-2.5 px-4 text-sm font-medium"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newCategoryName.trim()) {
+                  const newCategory: Category = {
+                    id: String(Date.now()),
+                    name: newCategoryName.trim(),
+                    type: 'product'
+                  }
+                  setCategories([...categories, newCategory])
+                  setNewCategoryName('')
+                }
+              }}
+            />
+            <Button
+              onClick={() => {
+                if (newCategoryName.trim()) {
+                  const newCategory: Category = {
+                    id: String(Date.now()),
+                    name: newCategoryName.trim(),
+                    type: 'product'
+                  }
+                  setCategories([...categories, newCategory])
+                  setNewCategoryName('')
+                }
+              }}
+              disabled={!newCategoryName.trim()}
+            >
+              Tambah
+            </Button>
+          </div>
+
+          {/* Category List */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+              Kategori Produk ({categories.length})
+            </p>
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg hover:bg-surface-container transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary text-lg">folder</span>
+                    <span className="text-sm font-medium text-on-surface">{category.name}</span>
+                  </div>
+                  <button
+                    onClick={() => setCategories(categories.filter(c => c.id !== category.id))}
+                    className="p-2 text-slate-400 hover:text-error hover:bg-error-container/20 rounded-lg transition-colors"
+                    title="Hapus Kategori"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <Button onClick={() => setIsCategoryModalOpen(false)}>
+              Selesai
             </Button>
           </div>
         </div>
