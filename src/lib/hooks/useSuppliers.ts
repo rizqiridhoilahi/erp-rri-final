@@ -44,14 +44,21 @@ export function useCreateSupplier() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async (supplier: Partial<Supplier>) => {
+    mutationFn: async (supplier: Record<string, unknown>) => {
+      console.log('Creating supplier with data:', supplier)
+      
       const { data, error } = await supabase
         .from('suppliers')
         .insert(supplier)
         .select()
         .single()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase insert error:', error)
+        throw error
+      }
+      
+      console.log('Supplier created:', data)
       return data
     },
     onSuccess: () => {
@@ -64,7 +71,9 @@ export function useUpdateSupplier() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ id, ...supplier }: Partial<Supplier> & { id: string }) => {
+    mutationFn: async ({ id, ...supplier }: Record<string, unknown> & { id: string }) => {
+      console.log('Updating supplier:', id, supplier)
+      
       const { data, error } = await supabase
         .from('suppliers')
         .update(supplier)
@@ -72,7 +81,12 @@ export function useUpdateSupplier() {
         .select()
         .single()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase update error:', error)
+        throw error
+      }
+      
+      console.log('Supplier updated:', data)
       return data
     },
     onSuccess: () => {

@@ -88,28 +88,42 @@ export default function Suppliers() {
     setIsModalOpen(true)
   }
 
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) return
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     
-    const submitData = {
-      name: formData.name,
-      categoryId: formData.categoryId || null,
-      status: formData.status,
-      picName: formData.picName || null,
-      picEmail: formData.picEmail || null,
-      picPhone: formData.picPhone || null,
-      officeAddress: formData.officeAddress || null,
-      warehouseAddress: formData.warehouseAddress || null,
-      storeUrl: formData.storeUrl || null,
-      notes: formData.notes || null,
+    if (!formData.name.trim()) {
+      alert('Nama supplier wajib diisi')
+      return
     }
     
-    if (selectedSupplier) {
-      await updateSupplier.mutateAsync({ id: selectedSupplier.id, ...submitData })
-    } else {
-      await createSupplier.mutateAsync(submitData)
+    try {
+      const submitData = {
+        name: formData.name,
+        categoryId: formData.categoryId || null,
+        status: formData.status,
+        picName: formData.picName || null,
+        picEmail: formData.picEmail || null,
+        picPhone: formData.picPhone || null,
+        officeAddress: formData.officeAddress || null,
+        warehouseAddress: formData.warehouseAddress || null,
+        storeUrl: formData.storeUrl || null,
+        notes: formData.notes || null,
+      }
+      
+      console.log('Submitting supplier:', submitData)
+      
+      if (selectedSupplier) {
+        await updateSupplier.mutateAsync({ id: selectedSupplier.id, ...submitData })
+      } else {
+        await createSupplier.mutateAsync(submitData)
+      }
+      
+      console.log('Supplier saved successfully')
+      setIsModalOpen(false)
+    } catch (error) {
+      console.error('Error saving supplier:', error)
+      alert('Gagal menyimpan supplier: ' + (error as Error).message)
     }
-    setIsModalOpen(false)
   }
 
   const handleDelete = async (id: string) => {
@@ -319,7 +333,7 @@ export default function Suppliers() {
         description="Lengkapi informasi supplier"
         size="lg"
       >
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1 col-span-2">
               <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
