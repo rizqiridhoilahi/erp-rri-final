@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Upload, X } from 'lucide-react'
+import { X, Image as ImageIcon } from 'lucide-react'
 import { Button, Input } from '@/components/forms'
 import { Modal } from '@/components/shared'
 import { cn } from '@/lib/utils'
@@ -71,6 +71,7 @@ export function ProductForm({
   
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreview, setImagePreview] = useState<string>('')
+  const [imageError, setImageError] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [submitError, setSubmitError] = useState<string>('')
 
@@ -114,6 +115,14 @@ export function ProductForm({
     }
     setErrors({})
   }, [product, isOpen])
+
+  const handleImageError = () => {
+    setImageError(true)
+  }
+
+  const handleImageLoad = () => {
+    setImageError(false)
+  }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -215,15 +224,17 @@ export function ProductForm({
                 isUploading && "opacity-50 cursor-wait"
               )}
             >
-              {imagePreview ? (
+              {imagePreview && !imageError ? (
                 <img
                   src={imagePreview}
                   alt="Preview"
                   className="w-full h-full object-cover"
+                  onError={handleImageError}
+                  onLoad={handleImageLoad}
                 />
               ) : (
                 <div className="text-center">
-                  <Upload className="w-8 h-8 text-on-surface-variant mx-auto mb-2" />
+                  <ImageIcon className="w-8 h-8 text-on-surface-variant mx-auto mb-2" />
                   <p className="text-xs text-on-surface-variant">Upload</p>
                 </div>
               )}

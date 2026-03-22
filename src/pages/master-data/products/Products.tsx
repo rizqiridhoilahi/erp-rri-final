@@ -21,6 +21,7 @@ export default function Products() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
   
   const { data: products = [], isLoading: isLoadingProducts } = useProducts()
   const { data: categories = [] } = useCategories('product')
@@ -100,8 +101,13 @@ export default function Products() {
       className: 'w-16',
       render: (row: Product & { category?: Category; supplier?: Supplier }) => (
         <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden">
-          {row.imageUrl ? (
-            <img src={row.imageUrl} alt={row.name} className="w-full h-full object-cover" />
+          {row.imageUrl && !imageErrors[row.id] ? (
+            <img 
+              src={row.imageUrl} 
+              alt={row.name} 
+              className="w-full h-full object-cover"
+              onError={() => setImageErrors(prev => ({ ...prev, [row.id]: true }))}
+            />
           ) : (
             <ImageIcon className="w-5 h-5 text-on-surface-variant" />
           )}
