@@ -305,7 +305,7 @@ SELECT
     (SELECT COUNT(*) FROM quotations WHERE status = 'pending_approval') AS pending_quotations,
     (SELECT COUNT(*) FROM sales_orders WHERE status = 'pending_approval') AS pending_orders,
     (SELECT COUNT(*) FROM invoices WHERE status = 'unpaid') AS unpaid_invoices,
-    COALESCE((SELECT SUM(grand_total) FROM invoices WHERE status = 'paid' AND date >= DATE_TRUNC('month', CURRENT_DATE))), 0) AS monthly_revenue;
+    COALESCE((SELECT SUM(grand_total) FROM invoices WHERE status = 'paid' AND date >= DATE_TRUNC('month', CURRENT_DATE)), 0) AS monthly_revenue;
 
 -- =============================================
 -- 9. VIEW: Products with Category & Supplier
