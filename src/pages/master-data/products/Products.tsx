@@ -285,7 +285,7 @@ export default function Products() {
         categories={categories}
         onAdd={handleAddCategory}
         onDelete={handleDeleteCategory}
-        isLoading={createCategory.isPending || deleteCategory.isPending}
+        isAdding={createCategory.isPending}
       />
     </div>
   )

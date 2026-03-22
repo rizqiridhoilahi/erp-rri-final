@@ -10,7 +10,7 @@ interface CategoryModalProps {
   categories: Category[]
   onAdd: (name: string) => Promise<void>
   onDelete: (id: string) => Promise<void>
-  isLoading?: boolean
+  isAdding?: boolean
 }
 
 export function CategoryModal({
@@ -19,7 +19,7 @@ export function CategoryModal({
   categories,
   onAdd,
   onDelete,
-  isLoading,
+  isAdding,
 }: CategoryModalProps) {
   const [newCategoryName, setNewCategoryName] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -70,8 +70,8 @@ export function CategoryModal({
           />
           <Button
             onClick={handleAdd}
-            disabled={!newCategoryName.trim() || isLoading}
-            isLoading={isLoading && !deletingId}
+            disabled={!newCategoryName.trim() || isAdding}
+            isLoading={isAdding}
           >
             Tambah
           </Button>

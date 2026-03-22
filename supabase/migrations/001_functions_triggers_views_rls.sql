@@ -429,124 +429,134 @@ ALTER TABLE receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE global_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transaction_sequences ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for global_settings (Admin only)
-CREATE POLICY "Admin can view global_settings"
+-- RLS Policies for global_settings (Public for development)
+CREATE POLICY "Public can view global_settings"
     ON global_settings FOR SELECT
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Admin can update global_settings"
+CREATE POLICY "Public can update global_settings"
     ON global_settings FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
--- RLS Policies for transaction_sequences (Internal use only)
-CREATE POLICY "Allow read on transaction_sequences"
+-- RLS Policies for transaction_sequences (Public for development)
+CREATE POLICY "Public can read transaction_sequences"
     ON transaction_sequences FOR SELECT
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow insert on transaction_sequences"
+CREATE POLICY "Public can insert transaction_sequences"
     ON transaction_sequences FOR INSERT
-    TO authenticated
+    TO public
     WITH CHECK (true);
 
-CREATE POLICY "Allow update on transaction_sequences"
+CREATE POLICY "Public can update transaction_sequences"
     ON transaction_sequences FOR UPDATE
-    TO authenticated
+    TO public
     USING (true);
 
--- RLS Policies for master data (All authenticated users can CRUD)
-CREATE POLICY "Allow CRUD on categories"
-    ON categories FOR ALL
-    TO authenticated
+-- RLS Policies for master data (Public access for development - replace with authenticated in production)
+CREATE POLICY "Allow public read on categories"
+    ON categories FOR SELECT
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on products"
+CREATE POLICY "Allow public insert on categories"
+    ON categories FOR INSERT
+    TO public
+    WITH CHECK (true);
+
+CREATE POLICY "Allow public delete on categories"
+    ON categories FOR DELETE
+    TO public
+    USING (true);
+
+CREATE POLICY "Allow public CRUD on products"
     ON products FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on suppliers"
+CREATE POLICY "Allow public CRUD on suppliers"
     ON suppliers FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on internal_pics"
+CREATE POLICY "Allow public CRUD on internal_pics"
     ON internal_pics FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
 -- RLS Policies for customers and related tables
-CREATE POLICY "Allow CRUD on customers"
+CREATE POLICY "Allow public CRUD on customers"
     ON customers FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on customer_pics"
+CREATE POLICY "Allow public CRUD on customer_pics"
     ON customer_pics FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on customer_addresses"
+CREATE POLICY "Allow public CRUD on customer_addresses"
     ON customer_addresses FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on customer_banks"
+CREATE POLICY "Allow public CRUD on customer_banks"
     ON customer_banks FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on customer_contracts"
+CREATE POLICY "Allow public CRUD on customer_contracts"
     ON customer_contracts FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on contract_prices"
+CREATE POLICY "Allow public CRUD on contract_prices"
     ON contract_prices FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
 -- RLS Policies for sales workflow
-CREATE POLICY "Allow CRUD on quotations"
+CREATE POLICY "Allow public CRUD on quotations"
     ON quotations FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on quotation_items"
+CREATE POLICY "Allow public CRUD on quotation_items"
     ON quotation_items FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on sales_orders"
+CREATE POLICY "Allow public CRUD on sales_orders"
     ON sales_orders FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on sales_order_items"
+CREATE POLICY "Allow public CRUD on sales_order_items"
     ON sales_order_items FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on delivery_orders"
+CREATE POLICY "Allow public CRUD on delivery_orders"
     ON delivery_orders FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on delivery_order_items"
+CREATE POLICY "Allow public CRUD on delivery_order_items"
     ON delivery_order_items FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on invoices"
+CREATE POLICY "Allow public CRUD on invoices"
     ON invoices FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
-CREATE POLICY "Allow CRUD on receipts"
+CREATE POLICY "Allow public CRUD on receipts"
     ON receipts FOR ALL
-    TO authenticated
+    TO public
     USING (true);
 
 -- =============================================
