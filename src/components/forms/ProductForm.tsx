@@ -72,6 +72,7 @@ export function ProductForm({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imagePreview, setImagePreview] = useState<string>('')
   const [isUploading, setIsUploading] = useState(false)
+  const [submitError, setSubmitError] = useState<string>('')
 
   useEffect(() => {
     if (product) {
@@ -167,8 +168,14 @@ export function ProductForm({
     
     if (!validate()) return
     
-    await onSubmit(formData)
-    onClose()
+    setSubmitError('')
+    
+    try {
+      await onSubmit(formData)
+      onClose()
+    } catch (error) {
+      setSubmitError('Gagal menyimpan: ' + (error as Error).message)
+    }
   }
 
   const formatCurrency = (value: number): string => {
@@ -421,6 +428,11 @@ export function ProductForm({
         </div>
 
         {/* Footer */}
+        {submitError && (
+          <div className="mt-4 text-sm font-medium text-center py-2 px-4 rounded-lg bg-red-100 text-red-700">
+            {submitError}
+          </div>
+        )}
         <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
           <Button type="button" variant="outline" onClick={onClose}>
             Batal

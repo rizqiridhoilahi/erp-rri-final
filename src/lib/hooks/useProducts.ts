@@ -57,14 +57,44 @@ export function useCreateProduct() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async (product: Partial<Product>) => {
+    mutationFn: async (product: Record<string, unknown>) => {
+      const dbData: Record<string, unknown> = {
+        sku: product.sku,
+        name: product.name,
+        status: product.status || 'active',
+        unit: product.unit || 'PCS',
+        description: product.description || null,
+        image_url: product.imageUrl || null,
+        brand: product.brand || null,
+        is_contract_product: product.isContractProduct || false,
+        initial_stock: product.currentStock || 0,
+        current_stock: product.currentStock || 0,
+        min_stock_limit: product.minStockLimit || 5,
+      }
+      
+      if (product.sellingPrice) {
+        dbData.selling_price = product.sellingPrice
+      }
+      if (product.purchasePrice) {
+        dbData.purchase_price = product.purchasePrice
+      }
+      if (product.categoryId) {
+        dbData.category_id = product.categoryId
+      }
+      if (product.supplierId) {
+        dbData.supplier_id = product.supplierId
+      }
+      
       const { data, error } = await supabase
         .from('products')
-        .insert(product)
+        .insert(dbData)
         .select()
         .single()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase insert error:', error)
+        throw error
+      }
       return data
     },
     onSuccess: () => {
@@ -77,15 +107,43 @@ export function useUpdateProduct() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ id, ...product }: Partial<Product> & { id: string }) => {
+    mutationFn: async ({ id, ...product }: Record<string, unknown> & { id: string }) => {
+      const dbData: Record<string, unknown> = {
+        sku: product.sku,
+        name: product.name,
+        status: product.status || 'active',
+        unit: product.unit || 'PCS',
+        description: product.description || null,
+        image_url: product.imageUrl || null,
+        brand: product.brand || null,
+        is_contract_product: product.isContractProduct || false,
+        min_stock_limit: product.minStockLimit || 5,
+      }
+      
+      if (product.sellingPrice) {
+        dbData.selling_price = product.sellingPrice
+      }
+      if (product.purchasePrice) {
+        dbData.purchase_price = product.purchasePrice
+      }
+      if (product.categoryId) {
+        dbData.category_id = product.categoryId
+      }
+      if (product.supplierId) {
+        dbData.supplier_id = product.supplierId
+      }
+      
       const { data, error } = await supabase
         .from('products')
-        .update(product)
+        .update(dbData)
         .eq('id', id)
         .select()
         .single()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase update error:', error)
+        throw error
+      }
       return data
     },
     onSuccess: () => {

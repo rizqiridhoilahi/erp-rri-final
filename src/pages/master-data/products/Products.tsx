@@ -43,10 +43,20 @@ export default function Products() {
   }
 
   const handleSubmitProduct = async (data: ProductFormData) => {
-    const productData = {
-      ...data,
+    const productData: Record<string, unknown> = {
+      sku: data.sku,
+      name: data.name,
+      brand: data.brand || null,
+      categoryId: data.categoryId || null,
+      supplierId: data.supplierId || null,
       sellingPrice: String(data.sellingPrice),
       purchasePrice: data.purchasePrice ? String(data.purchasePrice) : null,
+      unit: data.unit,
+      currentStock: data.currentStock || 0,
+      minStockLimit: data.minStockLimit || 5,
+      isContractProduct: data.isContractProduct || false,
+      imageUrl: data.imageUrl || null,
+      description: data.description || null,
     }
     
     if (selectedProduct) {
