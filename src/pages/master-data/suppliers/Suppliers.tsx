@@ -75,14 +75,14 @@ export default function Suppliers() {
     setSelectedSupplier(supplier)
     setFormData({
       name: supplier.name,
-      categoryId: (supplier as Record<string, unknown>).category_id as string ?? '',
+      categoryId: supplier.categoryId ?? '',
       status: supplier.status ?? 'active',
-      picName: (supplier as Record<string, unknown>).pic_name as string ?? '',
-      picEmail: (supplier as Record<string, unknown>).pic_email as string ?? '',
-      picPhone: (supplier as Record<string, unknown>).pic_phone as string ?? '',
-      officeAddress: (supplier as Record<string, unknown>).office_address as string ?? '',
-      warehouseAddress: (supplier as Record<string, unknown>).warehouse_address as string ?? '',
-      storeUrl: (supplier as Record<string, unknown>).store_url as string ?? '',
+      picName: supplier.picName ?? '',
+      picEmail: supplier.picEmail ?? '',
+      picPhone: supplier.picPhone ?? '',
+      officeAddress: supplier.officeAddress ?? '',
+      warehouseAddress: supplier.warehouseAddress ?? '',
+      storeUrl: supplier.storeUrl ?? '',
       notes: supplier.notes ?? '',
     })
     setIsModalOpen(true)
@@ -199,8 +199,8 @@ export default function Suppliers() {
       header: 'PIC Supplier',
       render: (row: SupplierWithCategory) => (
         <div>
-          <p className="text-sm font-semibold text-on-surface">{(row as Record<string, unknown>).pic_name as string || '-'}</p>
-          <p className="text-[11px] text-slate-400">{(row as Record<string, unknown>).pic_email as string || '-'}</p>
+          <p className="text-sm font-semibold text-on-surface">{row.picName || '-'}</p>
+          <p className="text-[11px] text-slate-400">{row.picEmail || '-'}</p>
         </div>
       ),
     },
@@ -208,7 +208,7 @@ export default function Suppliers() {
       key: 'contact',
       header: 'Kontak PIC',
       render: (row: SupplierWithCategory) => (
-        <span className="text-sm text-on-surface-variant">{(row as Record<string, unknown>).pic_phone as string || '-'}</span>
+        <span className="text-sm text-on-surface-variant">{row.picPhone || '-'}</span>
       ),
     },
     {

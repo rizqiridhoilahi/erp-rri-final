@@ -75,23 +75,25 @@ export function ProductForm({
   const [submitError, setSubmitError] = useState<string>('')
 
   useEffect(() => {
-    if (product) {
+    const p = product as Record<string, unknown> | null
+    
+    if (p) {
       setFormData({
-        sku: product.sku || '',
-        name: product.name || '',
-        brand: product.brand || '',
-        categoryId: product.categoryId || '',
-        supplierId: product.supplierId || '',
-        sellingPrice: Number(product.sellingPrice) || 0,
-        purchasePrice: Number(product.purchasePrice) || 0,
-        unit: product.unit || 'PCS',
-        currentStock: product.currentStock || 0,
-        minStockLimit: product.minStockLimit || 5,
-        isContractProduct: product.isContractProduct || false,
-        imageUrl: product.imageUrl || '',
-        description: product.description || '',
+        sku: (p.sku as string) || '',
+        name: (p.name as string) || '',
+        brand: (p.brand as string) || '',
+        categoryId: (p.category_id as string) || '',
+        supplierId: (p.supplier_id as string) || '',
+        sellingPrice: Number(p.selling_price) || 0,
+        purchasePrice: Number(p.purchase_price) || 0,
+        unit: (p.unit as string) || 'PCS',
+        currentStock: (p.current_stock as number) || 0,
+        minStockLimit: (p.min_stock_limit as number) || 5,
+        isContractProduct: (p.is_contract_product as boolean) || false,
+        imageUrl: (p.image_url as string) || '',
+        description: (p.description as string) || '',
       })
-      setImagePreview(product.imageUrl || '')
+      setImagePreview((p.image_url as string) || '')
     } else {
       setFormData({
         sku: '',

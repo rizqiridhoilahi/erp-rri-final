@@ -15,7 +15,17 @@ export function useSuppliers() {
         .order('name')
       
       if (error) throw error
-      return data as (Supplier & { category: Category | null })[]
+      
+      return data.map(s => ({
+        ...s,
+        categoryId: s.category_id,
+        picName: s.pic_name,
+        picEmail: s.pic_email,
+        picPhone: s.pic_phone,
+        officeAddress: s.office_address,
+        warehouseAddress: s.warehouse_address,
+        storeUrl: s.store_url,
+      })) as (Supplier & { category: Category | null })[]
     },
   })
 }

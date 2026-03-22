@@ -12,7 +12,7 @@ export function useInternalPics() {
         .order('name')
       
       if (error) throw error
-      return data as InternalPic[]
+      return data
     },
   })
 }

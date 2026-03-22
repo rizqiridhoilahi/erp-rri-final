@@ -20,10 +20,13 @@ export function useCustomers() {
       
       return data.map(c => ({
         ...c,
+        customerId: c.customer_id,
+        isAllowed: c.is_allowed,
+        hasContract: c.has_contract,
         picCount: (c.pics as unknown as { count: number }[])?.[0]?.count ?? 0,
         addressCount: (c.addresses as unknown as { count: number }[])?.[0]?.count ?? 0,
-        hasContract: ((c.contracts as unknown as { id: string }[]) ?? []).length > 0,
-      })) as (Customer & { picCount: number; addressCount: number; hasContract: boolean })[]
+        hasContractFlag: ((c.contracts as unknown as { id: string }[]) ?? []).length > 0,
+      })) as (Customer & { picCount: number; addressCount: number; hasContract: boolean; hasContractFlag?: boolean })[]
     },
   })
 }

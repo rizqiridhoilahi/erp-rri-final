@@ -16,7 +16,20 @@ export function useProducts() {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      return data as (Product & { category: Category; supplier: Supplier })[]
+      
+      return data.map(p => ({
+        ...p,
+        categoryId: p.category_id,
+        supplierId: p.supplier_id,
+        sellingPrice: p.selling_price,
+        purchasePrice: p.purchase_price,
+        initialStock: p.initial_stock,
+        currentStock: p.current_stock,
+        minStockLimit: p.min_stock_limit,
+        isContractProduct: p.is_contract_product,
+        imageUrl: p.image_url,
+        productUrl: p.product_url,
+      })) as (Product & { category: Category; supplier: Supplier })[]
     },
   })
 }
