@@ -1,89 +1,101 @@
 import { useState } from 'react'
-import { Plus, Building2, User } from 'lucide-react'
+import { Plus, Building2, User, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/forms'
-import { DataTable, StatusBadge, SearchInput } from '@/components/shared'
+import { DataTable, StatusBadge, SearchInput, Modal } from '@/components/shared'
 import { cn } from '@/lib/utils'
+import {
+  useCustomers,
+  useCreateCustomer,
+  useUpdateCustomer,
+  useDeleteCustomer,
+} from '@/lib/hooks'
+import type { Customer } from '@/db/schema'
 
-interface Customer {
-  id: string
-  customerId: string
-  type: 'individual' | 'corporate'
-  name: string
-  email: string
-  phone: string
+interface CustomerWithCounts extends Customer {
   picCount: number
   addressCount: number
   hasContract: boolean
-  status: 'active' | 'inactive'
 }
-
-const mockCustomers: Customer[] = [
-  {
-    id: '1',
-    customerId: 'CUST-001',
-    type: 'corporate',
-    name: 'PT. Media Citra Nusantara Raya',
-    email: 'info@mediacitra.co.id',
-    phone: '(021) 5761234',
-    picCount: 3,
-    addressCount: 2,
-    hasContract: true,
-    status: 'active',
-  },
-  {
-    id: '2',
-    customerId: 'CUST-002',
-    type: 'individual',
-    name: 'Budi Santoso',
-    email: 'budi.santoso@email.com',
-    phone: '081234567890',
-    picCount: 1,
-    addressCount: 2,
-    hasContract: false,
-    status: 'active',
-  },
-  {
-    id: '3',
-    customerId: 'CUST-003',
-    type: 'corporate',
-    name: 'CV. Makmur Sejahtera',
-    email: 'admin@makmur sejahtera.co.id',
-    phone: '(031) 1234567',
-    picCount: 2,
-    addressCount: 1,
-    hasContract: false,
-    status: 'active',
-  },
-  {
-    id: '4',
-    customerId: 'CUST-004',
-    type: 'corporate',
-    name: 'PT. Digital Global',
-    email: 'procurement@digitalglobal.id',
-    phone: '(021) 7890123',
-    picCount: 4,
-    addressCount: 3,
-    hasContract: true,
-    status: 'active',
-  },
-]
 
 export default function Customers() {
   const [searchQuery, setSearchQuery] = useState('')
   const [customerType, setCustomerType] = useState<'all' | 'individual' | 'corporate'>('all')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithCounts | null>(null)
+  
+  const [formData, setFormData] = useState({
+    type: 'corporate' as 'individual' | 'corporate',
+    name: '',
+    email: '',
+    phone: '',
+    notes: '',
+  })
 
-  const filteredCustomers = mockCustomers.filter((customer) => {
-    const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.customerId.toLowerCase().includes(searchQuery.toLowerCase())
+  const { data: customers = [], isLoading } = useCustomers()
+  const createCustomer = useCreateCustomer()
+  const updateCustomer = useUpdateCustomer()
+  const deleteCustomer = useDeleteCustomer()
+
+  const handleOpenAdd = () => {
+    setSelectedCustomer(null)
+    setFormData({
+      type: 'corporate',
+      name: '',
+      email: '',
+      phone: '',
+      notes: '',
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleOpenEdit = (customer: CustomerWithCounts) => {
+    setSelectedCustomer(customer)
+    setFormData({
+      type: customer.type,
+      name: customer.name,
+      email: customer.email ?? '',
+      phone: customer.phone ?? '',
+      notes: customer.notes ?? '',
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) return
+    
+    if (selectedCustomer) {
+      await updateCustomer.mutateAsync({ id: selectedCustomer.id, ...formData })
+    } else {
+      await createCustomer.mutateAsync(formData)
+    }
+    setIsModalOpen(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus pelanggan ini?')) {
+      await deleteCustomer.mutateAsync(id)
+    }
+  }
+
+  const filteredCustomers = customers.filter((customer) => {
+    const matchesSearch = 
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.customerId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (customer.email ?? '').toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType = customerType === 'all' || customer.type === customerType
     return matchesSearch && matchesType
   })
+
+  const totalCustomers = customers.length
+  const corporateCustomers = customers.filter(c => c.type === 'corporate').length
+  const individualCustomers = customers.filter(c => c.type === 'individual').length
+  const contractCustomers = customers.filter(c => c.hasContract).length
 
   const columns = [
     {
       key: 'customerId',
       header: 'ID',
-      render: (row: Customer) => (
+      render: (row: CustomerWithCounts) => (
         <span className="font-mono text-xs bg-surface-container px-2 py-1 rounded">{row.customerId}</span>
       ),
     },
@@ -91,7 +103,7 @@ export default function Customers() {
       key: 'type',
       header: 'Tipe',
       className: 'w-16',
-      render: (row: Customer) => (
+      render: (row: CustomerWithCounts) => (
         <div className={cn(
           "w-8 h-8 rounded-lg flex items-center justify-center",
           row.type === 'corporate' ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"
@@ -103,24 +115,24 @@ export default function Customers() {
     {
       key: 'name',
       header: 'Nama Pelanggan',
-      render: (row: Customer) => (
+      render: (row: CustomerWithCounts) => (
         <div>
           <p className="font-bold text-on-surface">{row.name}</p>
-          <p className="text-xs text-on-surface-variant">{row.email}</p>
+          <p className="text-xs text-on-surface-variant">{row.email || '-'}</p>
         </div>
       ),
     },
     {
       key: 'contact',
       header: 'Kontak',
-      render: (row: Customer) => (
-        <span className="text-on-surface-variant">{row.phone}</span>
+      render: (row: CustomerWithCounts) => (
+        <span className="text-on-surface-variant">{row.phone || '-'}</span>
       ),
     },
     {
       key: 'data',
       header: 'Data',
-      render: (row: Customer) => (
+      render: (row: CustomerWithCounts) => (
         <div className="flex gap-4">
           <span className="text-xs text-on-surface-variant">
             {row.picCount} PIC • {row.addressCount} Alamat
@@ -131,7 +143,7 @@ export default function Customers() {
     {
       key: 'contract',
       header: 'Kontrak',
-      render: (row: Customer) => (
+      render: (row: CustomerWithCounts) => (
         row.hasContract ? (
           <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">
             <span className="material-symbols-outlined text-sm">description</span>
@@ -145,16 +157,29 @@ export default function Customers() {
     {
       key: 'status',
       header: 'Status',
-      render: (row: Customer) => <StatusBadge status={row.status} />,
+      render: (row: CustomerWithCounts) => <StatusBadge status={row.status ?? 'active'} />,
     },
     {
       key: 'actions',
       header: '',
-      className: 'w-16',
-      render: () => (
-        <button className="p-2 text-slate-400 hover:text-primary hover:bg-white rounded-lg transition-all">
-          <span className="material-symbols-outlined text-lg">more_vert</span>
-        </button>
+      className: 'w-24',
+      render: (row: CustomerWithCounts) => (
+        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => handleOpenEdit(row)}
+            className="p-2 text-slate-400 hover:text-primary hover:bg-white rounded-lg transition-all"
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(row.id)}
+            className="p-2 text-slate-400 hover:text-error hover:bg-white rounded-lg transition-all"
+            title="Delete"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ]
@@ -174,7 +199,7 @@ export default function Customers() {
             Kelola database klien dan kemitraan perusahaan.
           </p>
         </div>
-        <Button leftIcon={<Plus className="w-4 h-4" />}>
+        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={handleOpenAdd}>
           Add Pelanggan
         </Button>
       </div>
@@ -184,25 +209,25 @@ export default function Customers() {
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Pelanggan</p>
           <div className="flex items-end gap-2 mt-2">
-            <span className="text-3xl font-black text-on-surface">856</span>
+            <span className="text-3xl font-black text-on-surface">{totalCustomers}</span>
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Bisnis (Corporate)</p>
           <div className="flex items-end gap-2 mt-2">
-            <span className="text-3xl font-black text-on-surface">624</span>
+            <span className="text-3xl font-black text-on-surface">{corporateCustomers}</span>
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Perorangan</p>
           <div className="flex items-end gap-2 mt-2">
-            <span className="text-3xl font-black text-on-surface">232</span>
+            <span className="text-3xl font-black text-on-surface">{individualCustomers}</span>
           </div>
         </div>
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Kontrak Aktif</p>
           <div className="flex items-end gap-2 mt-2">
-            <span className="text-3xl font-black text-primary">48</span>
+            <span className="text-3xl font-black text-primary">{contractCustomers}</span>
           </div>
         </div>
       </div>
@@ -252,8 +277,119 @@ export default function Customers() {
           data={filteredCustomers}
           keyExtractor={(row) => row.id}
           emptyMessage="Tidak ada pelanggan yang ditemukan"
+          isLoading={isLoading}
         />
       </div>
+
+      {/* Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={selectedCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}
+        description="Lengkapi informasi pelanggan"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+              Tipe Pelanggan
+            </label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, type: 'corporate' })}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 transition-colors",
+                  formData.type === 'corporate'
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-slate-200 text-slate-500 hover:border-slate-300"
+                )}
+              >
+                <Building2 className="w-4 h-4" />
+                <span className="font-bold text-sm">Corporate</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, type: 'individual' })}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 transition-colors",
+                  formData.type === 'individual'
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-slate-200 text-slate-500 hover:border-slate-300"
+                )}
+              >
+                <User className="w-4 h-4" />
+                <span className="font-bold text-sm">Individual</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+              Nama {formData.type === 'corporate' ? 'Perusahaan' : 'Lengkap'} <span className="text-error">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder={formData.type === 'corporate' ? 'PT. Contoh Indonesia' : 'Nama lengkap'}
+              className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                Email
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@contoh.com"
+                className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                Telepon
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="08xxxxxxxxxx"
+                className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+              Catatan
+            </label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Catatan tambahan..."
+              rows={3}
+              className="w-full bg-surface-container-low border-0 rounded-md py-3 px-4 text-sm font-medium resize-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+          <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+            Batal
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            isLoading={createCustomer.isPending || updateCustomer.isPending}
+          >
+            {selectedCustomer ? 'Simpan Perubahan' : 'Simpan'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

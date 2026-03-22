@@ -1,76 +1,95 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/forms'
-import { DataTable, SearchInput, StatusBadge } from '@/components/shared'
-
-interface InternalPic {
-  id: string
-  name: string
-  position: string
-  email: string
-  phone: string
-  status: 'active' | 'inactive'
-}
-
-const mockInternalPics: InternalPic[] = [
-  {
-    id: '1',
-    name: 'Arya Satria',
-    position: 'Direktur Operasional',
-    email: 'arya.satria@rri.co.id',
-    phone: '+62 812-3456-7890',
-    status: 'active',
-  },
-  {
-    id: '2',
-    name: 'Budi Pratama',
-    position: 'Kepala Divisi Pengadaan',
-    email: 'budi.pratama@rri.co.id',
-    phone: '+62 811-9988-7766',
-    status: 'active',
-  },
-  {
-    id: '3',
-    name: 'Dewi Anjani',
-    position: 'Manager Keuangan',
-    email: 'dewi.anjani@rri.co.id',
-    phone: '+62 813-2233-4455',
-    status: 'inactive',
-  },
-  {
-    id: '4',
-    name: 'Rian Kusuma',
-    position: 'Legal Officer',
-    email: 'rian.kusuma@rri.co.id',
-    phone: '+62 856-7788-1122',
-    status: 'active',
-  },
-]
+import { DataTable, SearchInput, Modal } from '@/components/shared'
+import {
+  useInternalPics,
+  useCreateInternalPic,
+  useUpdateInternalPic,
+  useDeleteInternalPic,
+} from '@/lib/hooks'
+import type { InternalPic } from '@/db/schema'
 
 export default function InternalPics() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedPic, setSelectedPic] = useState<InternalPic | null>(null)
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    position: '',
+    email: '',
+    phone: '',
+  })
 
-  const filteredPics = mockInternalPics.filter((pic) =>
+  const { data: pics = [], isLoading } = useInternalPics()
+  const createPic = useCreateInternalPic()
+  const updatePic = useUpdateInternalPic()
+  const deletePic = useDeleteInternalPic()
+
+  const handleOpenAdd = () => {
+    setSelectedPic(null)
+    setFormData({
+      name: '',
+      position: '',
+      email: '',
+      phone: '',
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleOpenEdit = (pic: InternalPic) => {
+    setSelectedPic(pic)
+    setFormData({
+      name: pic.name,
+      position: pic.position,
+      email: pic.email,
+      phone: pic.phone,
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim() || !formData.position.trim() || !formData.email.trim()) return
+    
+    if (selectedPic) {
+      await updatePic.mutateAsync({ id: selectedPic.id, ...formData })
+    } else {
+      await createPic.mutateAsync(formData)
+    }
+    setIsModalOpen(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus PIC ini?')) {
+      await deletePic.mutateAsync(id)
+    }
+  }
+
+  const filteredPics = pics.filter((pic) =>
     pic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     pic.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     pic.position.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const totalPics = pics.length
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  }
+
   const columns = [
     {
       key: 'name',
       header: 'Nama Lengkap',
-      render: (row: InternalPic) => {
-        const initials = row.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-        return (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-primary-container/20 text-primary flex items-center justify-center font-bold text-xs">
-              {initials}
-            </div>
-            <span className="text-sm font-semibold text-on-surface">{row.name}</span>
+      render: (row: InternalPic) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded bg-primary-container/20 text-primary flex items-center justify-center font-bold text-xs">
+            {getInitials(row.name)}
           </div>
-        )
-      },
+          <span className="text-sm font-semibold text-on-surface">{row.name}</span>
+        </div>
+      ),
     },
     {
       key: 'position',
@@ -94,20 +113,26 @@ export default function InternalPics() {
       ),
     },
     {
-      key: 'status',
-      header: 'Status',
-      render: (row: InternalPic) => (
-        <StatusBadge status={row.status} />
-      ),
-    },
-    {
       key: 'actions',
       header: '',
-      className: 'w-16',
-      render: () => (
-        <button className="p-2 text-slate-300 hover:text-primary transition-colors">
-          <span className="material-symbols-outlined text-lg">more_vert</span>
-        </button>
+      className: 'w-24',
+      render: (row: InternalPic) => (
+        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => handleOpenEdit(row)}
+            className="p-2 text-slate-400 hover:text-primary hover:bg-white rounded-lg transition-all"
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(row.id)}
+            className="p-2 text-slate-400 hover:text-error hover:bg-white rounded-lg transition-all"
+            title="Delete"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ]
@@ -129,24 +154,17 @@ export default function InternalPics() {
             Daftar personil internal yang memiliki otorisasi penandatanganan dokumen.
           </p>
         </div>
-        <Button leftIcon={<Plus className="w-4 h-4" />}>
+        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={handleOpenAdd}>
           Add PIC
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total PIC</span>
           <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-2xl font-black text-on-surface">24</span>
-            <span className="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded">+2</span>
-          </div>
-        </div>
-        <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aktif Signer</span>
-          <div className="mt-2">
-            <span className="text-2xl font-black text-on-surface">18</span>
+            <span className="text-2xl font-black text-on-surface">{totalPics}</span>
           </div>
         </div>
         <div className="col-span-2 bg-surface-container-lowest p-5 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between">
@@ -154,7 +172,7 @@ export default function InternalPics() {
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">System Health</span>
             <div className="flex items-center gap-2 mt-2">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-sm font-semibold text-primary">Live Data Stream</span>
+              <span className="text-sm font-semibold text-primary">Live Data</span>
             </div>
           </div>
           <div className="absolute -right-4 -bottom-4 opacity-10">
@@ -187,24 +205,85 @@ export default function InternalPics() {
           data={filteredPics}
           keyExtractor={(row) => row.id}
           emptyMessage="Tidak ada PIC yang ditemukan"
+          isLoading={isLoading}
         />
       </div>
 
-      {/* Live Notification */}
-      <div className="mt-8 flex justify-end">
-        <div className="bg-surface-variant/70 backdrop-blur-md p-4 rounded-xl border border-white/20 shadow-xl flex items-center gap-4 max-w-sm">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+      {/* Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={selectedPic ? 'Edit PIC Internal' : 'Tambah PIC Internal Baru'}
+        description="Lengkapi informasi personil internal"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+              Nama Lengkap <span className="text-error">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Nama lengkap"
+              className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium focus:ring-2 focus:ring-primary/20"
+            />
           </div>
-          <div>
-            <p className="text-xs font-bold text-primary uppercase tracking-wider">System Sync</p>
-            <p className="text-sm font-medium text-on-surface">All signatures updated successfully.</p>
+
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+              Jabatan <span className="text-error">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.position}
+              onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+              placeholder="Contoh: Kepala Divisi Pengadaan"
+              className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium focus:ring-2 focus:ring-primary/20"
+            />
           </div>
-          <button className="ml-4 text-slate-400">
-            <span className="material-symbols-outlined text-sm">close</span>
-          </button>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                Email <span className="text-error">*</span>
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@rri.co.id"
+                className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                Telepon
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="08xxxxxxxxxx"
+                className="w-full bg-surface-container-low border-0 rounded-md py-2.5 px-4 text-sm font-medium focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
         </div>
-      </div>
+
+        <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+          <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+            Batal
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            isLoading={createPic.isPending || updatePic.isPending}
+          >
+            {selectedPic ? 'Simpan Perubahan' : 'Simpan'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

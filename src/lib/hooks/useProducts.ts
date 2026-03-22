@@ -37,9 +37,9 @@ export function useCategories(type: 'product' | 'supplier' = 'product') {
   })
 }
 
-export function useSuppliers() {
+export function useSupplierOptions() {
   return useQuery({
-    queryKey: ['suppliers'],
+    queryKey: ['supplier-options'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('suppliers')
