@@ -88,13 +88,20 @@ export default function Suppliers() {
     setIsModalOpen(true)
   }
 
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [submitMessage, setSubmitMessage] = useState('')
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!formData.name.trim()) {
-      alert('Nama supplier wajib diisi')
+      setSubmitStatus('error')
+      setSubmitMessage('Nama supplier wajib diisi')
       return
     }
+    
+    setSubmitStatus('loading')
+    setSubmitMessage('Menyimpan...')
     
     try {
       const submitData = {
@@ -110,19 +117,18 @@ export default function Suppliers() {
         notes: formData.notes || null,
       }
       
-      console.log('Submitting supplier:', submitData)
-      
       if (selectedSupplier) {
         await updateSupplier.mutateAsync({ id: selectedSupplier.id, ...submitData })
       } else {
         await createSupplier.mutateAsync(submitData)
       }
       
-      console.log('Supplier saved successfully')
-      setIsModalOpen(false)
+      setSubmitStatus('success')
+      setSubmitMessage('Berhasil disimpan!')
+      setTimeout(() => setIsModalOpen(false), 1000)
     } catch (error) {
-      console.error('Error saving supplier:', error)
-      alert('Gagal menyimpan supplier: ' + (error as Error).message)
+      setSubmitStatus('error')
+      setSubmitMessage('Gagal: ' + (error as Error).message)
     }
   }
 
@@ -451,13 +457,24 @@ export default function Suppliers() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+          {submitMessage && (
+            <div className={cn(
+              "text-sm font-medium text-center py-2 px-4 rounded-lg",
+              submitStatus === 'success' && "bg-green-100 text-green-700",
+              submitStatus === 'error' && "bg-red-100 text-red-700",
+              submitStatus === 'loading' && "bg-blue-100 text-blue-700"
+            )}>
+              {submitMessage}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
             <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
               Batal
             </Button>
             <Button
               type="submit"
-              isLoading={createSupplier.isPending || updateSupplier.isPending}
+              isLoading={submitStatus === 'loading'}
             >
               {selectedSupplier ? 'Simpan Perubahan' : 'Simpan'}
             </Button>
