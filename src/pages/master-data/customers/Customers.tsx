@@ -60,15 +60,43 @@ export default function Customers() {
     setIsModalOpen(true)
   }
 
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) return
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [submitMessage, setSubmitMessage] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     
-    if (selectedCustomer) {
-      await updateCustomer.mutateAsync({ id: selectedCustomer.id, ...formData })
-    } else {
-      await createCustomer.mutateAsync(formData)
+    if (!formData.name.trim()) {
+      setSubmitStatus('error')
+      setSubmitMessage('Nama pelanggan wajib diisi')
+      return
     }
-    setIsModalOpen(false)
+    
+    setSubmitStatus('loading')
+    setSubmitMessage('Menyimpan...')
+    
+    try {
+      const submitData: Record<string, unknown> = {
+        type: formData.type,
+        name: formData.name,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        notes: formData.notes || null,
+      }
+      
+      if (selectedCustomer) {
+        await updateCustomer.mutateAsync({ id: selectedCustomer.id, ...submitData })
+      } else {
+        await createCustomer.mutateAsync(submitData)
+      }
+      
+      setSubmitStatus('success')
+      setSubmitMessage('Berhasil disimpan!')
+      setTimeout(() => setIsModalOpen(false), 1000)
+    } catch (error) {
+      setSubmitStatus('error')
+      setSubmitMessage('Gagal: ' + (error as Error).message)
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -289,7 +317,7 @@ export default function Customers() {
         description="Lengkapi informasi pelanggan"
         size="md"
       >
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
               Tipe Pelanggan
@@ -376,19 +404,30 @@ export default function Customers() {
               className="w-full bg-surface-container-low border-0 rounded-md py-3 px-4 text-sm font-medium resize-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
-        </div>
 
-        <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
-          <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-            Batal
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            isLoading={createCustomer.isPending || updateCustomer.isPending}
-          >
-            {selectedCustomer ? 'Simpan Perubahan' : 'Simpan'}
-          </Button>
-        </div>
+          {submitMessage && (
+            <div className={cn(
+              "text-sm font-medium text-center py-2 px-4 rounded-lg",
+              submitStatus === 'success' && "bg-green-100 text-green-700",
+              submitStatus === 'error' && "bg-red-100 text-red-700",
+              submitStatus === 'loading' && "bg-blue-100 text-blue-700"
+            )}>
+              {submitMessage}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              isLoading={submitStatus === 'loading'}
+            >
+              {selectedCustomer ? 'Simpan Perubahan' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   )

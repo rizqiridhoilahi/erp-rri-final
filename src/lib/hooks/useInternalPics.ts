@@ -38,14 +38,24 @@ export function useCreateInternalPic() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async (pic: Partial<InternalPic>) => {
+    mutationFn: async (pic: Record<string, unknown>) => {
+      const dbData: Record<string, unknown> = {
+        name: pic.name,
+        position: pic.position,
+        email: pic.email,
+        phone: pic.phone || null,
+      }
+      
       const { data, error } = await supabase
         .from('internal_pics')
-        .insert(pic)
+        .insert(dbData)
         .select()
         .single()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase create internal pic error:', error)
+        throw error
+      }
       return data
     },
     onSuccess: () => {
@@ -58,15 +68,25 @@ export function useUpdateInternalPic() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ id, ...pic }: Partial<InternalPic> & { id: string }) => {
+    mutationFn: async ({ id, ...pic }: Record<string, unknown> & { id: string }) => {
+      const dbData: Record<string, unknown> = {
+        name: pic.name,
+        position: pic.position,
+        email: pic.email,
+        phone: pic.phone || null,
+      }
+      
       const { data, error } = await supabase
         .from('internal_pics')
-        .update(pic)
+        .update(dbData)
         .eq('id', id)
         .select()
         .single()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase update internal pic error:', error)
+        throw error
+      }
       return data
     },
     onSuccess: () => {

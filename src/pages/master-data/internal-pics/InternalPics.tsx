@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Plus, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/forms'
 import { DataTable, SearchInput, Modal } from '@/components/shared'
+import { cn } from '@/lib/utils'
 import {
   useInternalPics,
   useCreateInternalPic,
@@ -49,15 +50,42 @@ export default function InternalPics() {
     setIsModalOpen(true)
   }
 
-  const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.position.trim() || !formData.email.trim()) return
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [submitMessage, setSubmitMessage] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     
-    if (selectedPic) {
-      await updatePic.mutateAsync({ id: selectedPic.id, ...formData })
-    } else {
-      await createPic.mutateAsync(formData)
+    if (!formData.name.trim() || !formData.position.trim() || !formData.email.trim()) {
+      setSubmitStatus('error')
+      setSubmitMessage('Nama, jabatan, dan email wajib diisi')
+      return
     }
-    setIsModalOpen(false)
+    
+    setSubmitStatus('loading')
+    setSubmitMessage('Menyimpan...')
+    
+    try {
+      const submitData: Record<string, unknown> = {
+        name: formData.name,
+        position: formData.position,
+        email: formData.email,
+        phone: formData.phone || null,
+      }
+      
+      if (selectedPic) {
+        await updatePic.mutateAsync({ id: selectedPic.id, ...submitData })
+      } else {
+        await createPic.mutateAsync(submitData)
+      }
+      
+      setSubmitStatus('success')
+      setSubmitMessage('Berhasil disimpan!')
+      setTimeout(() => setIsModalOpen(false), 1000)
+    } catch (error) {
+      setSubmitStatus('error')
+      setSubmitMessage('Gagal: ' + (error as Error).message)
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -217,7 +245,7 @@ export default function InternalPics() {
         description="Lengkapi informasi personil internal"
         size="md"
       >
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
               Nama Lengkap <span className="text-error">*</span>
@@ -270,19 +298,30 @@ export default function InternalPics() {
               />
             </div>
           </div>
-        </div>
 
-        <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
-          <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-            Batal
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            isLoading={createPic.isPending || updatePic.isPending}
-          >
-            {selectedPic ? 'Simpan Perubahan' : 'Simpan'}
-          </Button>
-        </div>
+          {submitMessage && (
+            <div className={cn(
+              "text-sm font-medium text-center py-2 px-4 rounded-lg",
+              submitStatus === 'success' && "bg-green-100 text-green-700",
+              submitStatus === 'error' && "bg-red-100 text-red-700",
+              submitStatus === 'loading' && "bg-blue-100 text-blue-700"
+            )}>
+              {submitMessage}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              isLoading={submitStatus === 'loading'}
+            >
+              {selectedPic ? 'Simpan Perubahan' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   )

@@ -63,36 +63,26 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async (customer: Partial<Customer> & { pics?: Partial<CustomerPic>[]; addresses?: Partial<CustomerAddress>[]; banks?: Partial<CustomerBank>[] }) => {
-      const { pics, addresses, banks, ...customerData } = customer
+    mutationFn: async (customer: Record<string, unknown>) => {
+      const dbData: Record<string, unknown> = {
+        type: customer.type,
+        name: customer.name,
+        email: customer.email || null,
+        phone: customer.phone || null,
+        notes: customer.notes || null,
+        is_allowed: customer.isAllowed ?? true,
+        has_contract: customer.hasContract ?? false,
+      }
       
       const { data: newCustomer, error } = await supabase
         .from('customers')
-        .insert(customerData)
+        .insert(dbData)
         .select()
         .single()
       
-      if (error) throw error
-      
-      if (pics && pics.length > 0) {
-        const { error: picsError } = await supabase
-          .from('customer_pics')
-          .insert(pics.map(p => ({ ...p, customer_id: newCustomer.id })))
-        if (picsError) throw picsError
-      }
-      
-      if (addresses && addresses.length > 0) {
-        const { error: addError } = await supabase
-          .from('customer_addresses')
-          .insert(addresses.map(a => ({ ...a, customer_id: newCustomer.id })))
-        if (addError) throw addError
-      }
-      
-      if (banks && banks.length > 0) {
-        const { error: banksError } = await supabase
-          .from('customer_banks')
-          .insert(banks.map(b => ({ ...b, customer_id: newCustomer.id })))
-        if (banksError) throw banksError
+      if (error) {
+        console.error('Supabase create customer error:', error)
+        throw error
       }
       
       return newCustomer
@@ -107,15 +97,28 @@ export function useUpdateCustomer() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ id, ...customer }: Partial<Customer> & { id: string }) => {
+    mutationFn: async ({ id, ...customer }: Record<string, unknown> & { id: string }) => {
+      const dbData: Record<string, unknown> = {
+        type: customer.type,
+        name: customer.name,
+        email: customer.email || null,
+        phone: customer.phone || null,
+        notes: customer.notes || null,
+        is_allowed: customer.isAllowed ?? true,
+        has_contract: customer.hasContract ?? false,
+      }
+      
       const { data, error } = await supabase
         .from('customers')
-        .update(customer)
+        .update(dbData)
         .eq('id', id)
         .select()
         .single()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase update customer error:', error)
+        throw error
+      }
       return data
     },
     onSuccess: () => {
