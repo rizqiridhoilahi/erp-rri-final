@@ -580,6 +580,25 @@ BEGIN
 END;
 $$;
 
+-- Trigger to auto-generate customer_id
+CREATE OR REPLACE FUNCTION set_customer_id()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.customer_id IS NULL THEN
+        NEW.customer_id := get_next_customer_id();
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_set_customer_id ON customers;
+CREATE TRIGGER trg_set_customer_id
+    BEFORE INSERT ON customers
+    FOR EACH ROW
+    EXECUTE FUNCTION set_customer_id();
+
 -- =============================================
 -- 15. FUNCTION: Check Stock Availability
 -- =============================================

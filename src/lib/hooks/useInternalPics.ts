@@ -43,7 +43,7 @@ export function useCreateInternalPic() {
         name: pic.name,
         position: pic.position,
         email: pic.email,
-        phone: pic.phone || null,
+        phone: pic.phone || '',
       }
       
       const { data, error } = await supabase
@@ -73,7 +73,7 @@ export function useUpdateInternalPic() {
         name: pic.name,
         position: pic.position,
         email: pic.email,
-        phone: pic.phone || null,
+        phone: pic.phone || '',
       }
       
       const { data, error } = await supabase

@@ -67,7 +67,16 @@ export function useCreateCustomer() {
   
   return useMutation({
     mutationFn: async (customer: Record<string, unknown>) => {
+      const { data: nextIdData, error: idError } = await supabase
+        .rpc('get_next_customer_id')
+      
+      if (idError) {
+        console.error('Error getting next customer ID:', idError)
+        throw idError
+      }
+      
       const dbData: Record<string, unknown> = {
+        customer_id: nextIdData,
         type: customer.type,
         name: customer.name,
         email: customer.email || null,
