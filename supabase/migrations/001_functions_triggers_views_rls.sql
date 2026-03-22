@@ -140,7 +140,105 @@ END;
 $$;
 
 -- =============================================
--- 6. FUNCTION: Convert Number to Words (IDR)
+-- 6. HELPER FUNCTION: Convert Hundreds (for number_to_words_id)
+-- =============================================
+CREATE OR REPLACE FUNCTION convert_hundreds(n INTEGER)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    result TEXT := '';
+    hundreds_val INTEGER;
+    tens_val INTEGER;
+    ones_val INTEGER;
+BEGIN
+    IF n > 99 THEN
+        hundreds_val := n / 100;
+        IF hundreds_val = 1 THEN
+            result := result || 'Seratus ';
+        ELSIF hundreds_val = 2 THEN
+            result := result || 'Dua Ratus ';
+        ELSE
+            result := result || 
+                CASE hundreds_val
+                    WHEN 3 THEN 'Tiga'
+                    WHEN 4 THEN 'Empat'
+                    WHEN 5 THEN 'Lima'
+                    WHEN 6 THEN 'Enam'
+                    WHEN 7 THEN 'Tujuh'
+                    WHEN 8 THEN 'Delapan'
+                    WHEN 9 THEN 'Sembilan'
+                END || ' Ratus ';
+        END IF;
+        n := n % 100;
+    END IF;
+    
+    IF n > 11 AND n < 20 THEN
+        result := result || 
+            CASE n - 10
+                WHEN 1 THEN 'Sebelas'
+                WHEN 2 THEN 'Dua Belas'
+                WHEN 3 THEN 'Tiga Belas'
+                WHEN 4 THEN 'Empat Belas'
+                WHEN 5 THEN 'Lima Belas'
+                WHEN 6 THEN 'Enam Belas'
+                WHEN 7 THEN 'Tujuh Belas'
+                WHEN 8 THEN 'Delapan Belas'
+                WHEN 9 THEN 'Sembilan Belas'
+            END;
+    ELSIF n >= 20 THEN
+        tens_val := n / 10;
+        IF tens_val > 1 THEN
+            result := result ||
+                CASE tens_val
+                    WHEN 2 THEN 'Dua Puluh '
+                    WHEN 3 THEN 'Tiga Puluh '
+                    WHEN 4 THEN 'Empat Puluh '
+                    WHEN 5 THEN 'Lima Puluh '
+                    WHEN 6 THEN 'Enam Puluh '
+                    WHEN 7 THEN 'Tujuh Puluh '
+                    WHEN 8 THEN 'Delapan Puluh '
+                    WHEN 9 THEN 'Sembilan Puluh '
+                END;
+        END IF;
+        ones_val := n % 10;
+        IF ones_val > 0 THEN
+            result := result ||
+                CASE ones_val
+                    WHEN 1 THEN 'Satu'
+                    WHEN 2 THEN 'Dua'
+                    WHEN 3 THEN 'Tiga'
+                    WHEN 4 THEN 'Empat'
+                    WHEN 5 THEN 'Lima'
+                    WHEN 6 THEN 'Enam'
+                    WHEN 7 THEN 'Tujuh'
+                    WHEN 8 THEN 'Delapan'
+                    WHEN 9 THEN 'Sembilan'
+                END;
+        END IF;
+    ELSIF n > 0 THEN
+        result := result ||
+            CASE n
+                WHEN 1 THEN 'Satu'
+                WHEN 2 THEN 'Dua'
+                WHEN 3 THEN 'Tiga'
+                WHEN 4 THEN 'Empat'
+                WHEN 5 THEN 'Lima'
+                WHEN 6 THEN 'Enam'
+                WHEN 7 THEN 'Tujuh'
+                WHEN 8 THEN 'Delapan'
+                WHEN 9 THEN 'Sembilan'
+                WHEN 10 THEN 'Sepuluh'
+                WHEN 11 THEN 'Sebelas'
+            END;
+    END IF;
+    
+    RETURN result;
+END;
+$$;
+
+-- =============================================
+-- 7. FUNCTION: Convert Number to Words (IDR)
 -- =============================================
 CREATE OR REPLACE FUNCTION number_to_words_id(numeric_val NUMERIC)
 RETURNS TEXT
@@ -149,51 +247,9 @@ AS $$
 DECLARE
     input_num INTEGER := FLOOR(numeric_val)::INTEGER;
     output_text TEXT := '';
-    units TEXT[] := ARRAY['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
-    
-    FUNCTION convert_hundreds(n INTEGER) RETURN TEXT AS $$
-        DECLARE
-            result TEXT := '';
-            hundreds_val INTEGER;
-            tens_val INTEGER;
-            ones_val INTEGER;
-        BEGIN
-            IF n > 99 THEN
-                hundreds_val := n / 100;
-                IF hundreds_val = 1 THEN
-                    result := result || 'Seratus ';
-                ELSIF hundreds_val = 2 THEN
-                    result := result || 'Dua Ratus ';
-                ELSE
-                    result := result || units[hundreds_val] || ' Ratus ';
-                END IF;
-                n := n % 100;
-            END IF;
-            
-            IF n > 11 AND n < 20 THEN
-                result := result || units[n - 10] || ' Belas';
-            ELSIF n >= 20 THEN
-                tens_val := n / 10;
-                IF tens_val > 1 THEN
-                    result := result || units[tens_val] || ' Puluh ';
-                END IF;
-                ones_val := n % 10;
-                IF ones_val > 0 THEN
-                    result := result || units[ones_val];
-                END IF;
-            ELSIF n > 0 THEN
-                result := result || units[n];
-            END IF;
-            
-            RETURN result;
-        END;
-    $$ LANGUAGE plpgsql;
-    
     billions_val INTEGER;
     millions_val INTEGER;
     thousands_val INTEGER;
-    hundreds_val INTEGER;
-    
 BEGIN
     IF input_num = 0 THEN
         RETURN 'Nol';
@@ -238,7 +294,7 @@ END;
 $$;
 
 -- =============================================
--- 7. VIEW: Dashboard Summary
+-- 8. VIEW: Dashboard Summary
 -- =============================================
 CREATE OR REPLACE VIEW v_dashboard_summary AS
 SELECT 
@@ -249,10 +305,10 @@ SELECT
     (SELECT COUNT(*) FROM quotations WHERE status = 'pending_approval') AS pending_quotations,
     (SELECT COUNT(*) FROM sales_orders WHERE status = 'pending_approval') AS pending_orders,
     (SELECT COUNT(*) FROM invoices WHERE status = 'unpaid') AS unpaid_invoices,
-    (SELECT SUM(grand_total) FROM invoices WHERE status = 'paid' AND date >= DATE_TRUNC('month', CURRENT_DATE))) AS monthly_revenue;
+    COALESCE((SELECT SUM(grand_total) FROM invoices WHERE status = 'paid' AND date >= DATE_TRUNC('month', CURRENT_DATE))), 0) AS monthly_revenue;
 
 -- =============================================
--- 8. VIEW: Products with Category & Supplier
+-- 9. VIEW: Products with Category & Supplier
 -- =============================================
 CREATE OR REPLACE VIEW v_products_full AS
 SELECT 
@@ -278,7 +334,7 @@ LEFT JOIN categories c ON p.category_id = c.id
 LEFT JOIN suppliers s ON p.supplier_id = s.id;
 
 -- =============================================
--- 9. VIEW: Customers with Contract Info
+-- 10. VIEW: Customers with Contract Info
 -- =============================================
 CREATE OR REPLACE VIEW v_customers_full AS
 SELECT 
@@ -293,19 +349,19 @@ SELECT
     COUNT(DISTINCT cp.id) AS pic_count,
     COUNT(DISTINCT ca.id) AS address_count,
     COUNT(DISTINCT cb.id) AS bank_count,
-    cc.contract_number,
-    cc.contract_name,
-    cc.start_date,
-    cc.end_date
+    MAX(cc.contract_number) AS contract_number,
+    MAX(cc.contract_name) AS contract_name,
+    MAX(cc.start_date) AS start_date,
+    MAX(cc.end_date) AS end_date
 FROM customers c
 LEFT JOIN customer_pics cp ON c.id = cp.customer_id
 LEFT JOIN customer_addresses ca ON c.id = ca.customer_id
 LEFT JOIN customer_banks cb ON c.id = cb.customer_id
 LEFT JOIN customer_contracts cc ON c.id = cc.customer_id AND cc.end_date >= CURRENT_DATE
-GROUP BY c.id, cc.contract_number, cc.contract_name, cc.start_date, cc.end_date;
+GROUP BY c.id;
 
 -- =============================================
--- 10. VIEW: Active Quotations with Customer
+-- 11. VIEW: Active Quotations with Customer
 -- =============================================
 CREATE OR REPLACE VIEW v_quotations_active AS
 SELECT 
@@ -329,7 +385,7 @@ LEFT JOIN customers cust ON q.customer_id = cust.id
 LEFT JOIN internal_pics ip ON q.internal_pic_id = ip.id;
 
 -- =============================================
--- 11. VIEW: Invoice Summary
+-- 12. VIEW: Invoice Summary
 -- =============================================
 CREATE OR REPLACE VIEW v_invoices_summary AS
 SELECT 
@@ -348,7 +404,7 @@ LEFT JOIN sales_orders so ON i.sales_order_id = so.id
 LEFT JOIN customers cust ON so.customer_id = cust.id;
 
 -- =============================================
--- 12. ROW LEVEL SECURITY (RLS)
+-- 13. ROW LEVEL SECURITY (RLS)
 -- =============================================
 
 -- Enable RLS on all tables
@@ -494,7 +550,7 @@ CREATE POLICY "Allow CRUD on receipts"
     USING (true);
 
 -- =============================================
--- 13. FUNCTION: Get Next Customer ID
+-- 14. FUNCTION: Get Next Customer ID
 -- =============================================
 CREATE OR REPLACE FUNCTION get_next_customer_id()
 RETURNS VARCHAR
@@ -515,7 +571,7 @@ END;
 $$;
 
 -- =============================================
--- 14. FUNCTION: Check Stock Availability
+-- 15. FUNCTION: Check Stock Availability
 -- =============================================
 CREATE OR REPLACE FUNCTION check_stock_availability(
     p_product_id UUID,
@@ -537,7 +593,7 @@ END;
 $$;
 
 -- =============================================
--- 15. FUNCTION: Get Customer By ID for Cascade Drop
+-- 16. FUNCTION: Get Customer By ID for Cascade Drop
 -- =============================================
 CREATE OR REPLACE FUNCTION get_customer_details(p_customer_id UUID)
 RETURNS TABLE (
