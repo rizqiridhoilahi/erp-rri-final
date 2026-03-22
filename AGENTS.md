@@ -281,6 +281,57 @@ CUST-XXX (e.g., CUST-001)
 
 ---
 
+## SQL Migration Files
+
+### File Structure
+```
+supabase/migrations/
+├── 0000_initial_schema.sql      # Drizzle generated schema (do not edit)
+├── 001_functions_triggers_views_rls.sql  # Functions, triggers, views, RLS
+└── 002_storage_seed_helpers.sql  # Storage policies & seed data (optional)
+```
+
+### IMPORTANT: 001_functions_triggers_views_rls.sql
+
+This file contains **all database functions, triggers, views, and RLS policies**. When making changes to:
+
+- **Backend logic** that requires new/modified database functions
+- **Triggers** for automatic operations (e.g., stock updates)
+- **Views** for data aggregation
+- **RLS policies** for security
+
+**Always update `supabase/migrations/001_functions_triggers_views_rls.sql`** to reflect these changes.
+
+### Automatic SQL File Updates
+
+When implementing features that require database changes:
+
+1. **Edit `src/db/schema.ts`** (Drizzle schema)
+2. **Edit `supabase/migrations/001_functions_triggers_views_rls.sql`** if adding:
+   - New functions
+   - Modified functions
+   - New triggers
+   - New views
+   - New/modified RLS policies
+3. **Generate Drizzle migration:** `npm run db:generate`
+4. **Commit all changes** to GitHub
+
+### SQL File Contents (001)
+
+- Functions: `generate_doc_number`, `get_contract_price`, `number_to_words_id`, etc.
+- Triggers: `trg_update_stock_on_so`
+- Views: `v_dashboard_summary`, `v_products_full`, `v_customers_full`, etc.
+- RLS: Policies for all tables (authenticated users)
+
+### Manual SQL Execution
+
+After SQL file changes, execute in Supabase SQL Editor:
+1. Open `supabase/migrations/001_functions_triggers_views_rls.sql`
+2. Copy contents to Supabase SQL Editor
+3. Run SQL
+
+---
+
 ## Important Notes
 
 1. **PRD.md is the source of truth** - Always reference for business logic
