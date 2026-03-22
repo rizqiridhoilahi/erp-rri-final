@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Plus, Upload, Edit, Trash2 } from 'lucide-react'
+import { Plus, Upload, Edit, Trash2, Package } from 'lucide-react'
 import { Button } from '@/components/forms'
+import { CategoryModal } from '@/components/forms'
 import { DataTable, StatusBadge, SearchInput, Modal } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import {
@@ -9,6 +10,8 @@ import {
   useCreateSupplier,
   useUpdateSupplier,
   useDeleteSupplier,
+  useCreateCategory,
+  useDeleteCategory,
 } from '@/lib/hooks'
 import type { Supplier, Category } from '@/db/schema'
 
@@ -17,6 +20,7 @@ type SupplierWithCategory = Supplier & { category: Category | null }
 export default function Suppliers() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState<SupplierWithCategory | null>(null)
   
   const [formData, setFormData] = useState({
@@ -37,6 +41,18 @@ export default function Suppliers() {
   const createSupplier = useCreateSupplier()
   const updateSupplier = useUpdateSupplier()
   const deleteSupplier = useDeleteSupplier()
+  const createCategory = useCreateCategory()
+  const deleteCategory = useDeleteCategory()
+
+  const handleAddCategory = async (name: string) => {
+    await createCategory.mutateAsync({ name, type: 'supplier' })
+  }
+
+  const handleDeleteCategory = async (id: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus kategori ini?')) {
+      await deleteCategory.mutateAsync({ id, type: 'supplier' })
+    }
+  }
 
   const handleOpenAdd = () => {
     setSelectedSupplier(null)
@@ -272,6 +288,13 @@ export default function Suppliers() {
             className="w-80"
           />
           <div className="flex gap-4">
+            <button
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-lg text-xs font-medium text-slate-600 border border-slate-100 hover:bg-surface-container transition-colors"
+            >
+              <Package className="w-4 h-4" />
+              Kelola Kategori
+            </button>
             <button className="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-lg text-xs font-medium text-slate-600 border border-slate-100">
               <span className="material-symbols-outlined text-sm">filter_list</span>
               Filter
@@ -427,6 +450,16 @@ export default function Suppliers() {
           </Button>
         </div>
       </Modal>
+
+      {/* Category Management Modal */}
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        categories={categories}
+        onAdd={handleAddCategory}
+        onDelete={handleDeleteCategory}
+        isAdding={createCategory.isPending}
+      />
     </div>
   )
 }
