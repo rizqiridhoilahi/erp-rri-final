@@ -319,7 +319,7 @@ export default function Suppliers() {
         description="Lengkapi informasi supplier"
         size="lg"
       >
-        <div className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1 col-span-2">
               <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
@@ -436,19 +436,19 @@ export default function Suppliers() {
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
-          <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-            Batal
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            isLoading={createSupplier.isPending || updateSupplier.isPending}
-          >
-            {selectedSupplier ? 'Simpan Perubahan' : 'Simpan'}
-          </Button>
-        </div>
+          <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+            <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              isLoading={createSupplier.isPending || updateSupplier.isPending}
+            >
+              {selectedSupplier ? 'Simpan Perubahan' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
       </Modal>
 
       {/* Category Management Modal */}
