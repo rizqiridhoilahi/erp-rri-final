@@ -3,6 +3,7 @@ import { X, Image as ImageIcon } from 'lucide-react'
 import { Button, Input } from '@/components/forms'
 import { Modal } from '@/components/shared'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 import imageCompression from 'browser-image-compression'
 import type { Product, Category, Supplier } from '@/db/schema'
 
@@ -130,6 +131,7 @@ export function ProductForm({
 
     try {
       setIsUploading(true)
+      setImageError(false)
       
       const compressedFile = await imageCompression(file, {
         maxSizeMB: 1,
@@ -143,9 +145,30 @@ export function ProductForm({
       }
       reader.readAsDataURL(compressedFile)
       
-      setFormData((prev) => ({ ...prev, imageUrl: file.name }))
+      if (product?.id) {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${product.id}-${Date.now()}.${fileExt}`
+        
+        const { error: uploadError } = await supabase.storage
+          .from('public-assets')
+          .upload(`products/${fileName}`, compressedFile)
+        
+        if (uploadError) {
+          console.error('Upload error:', uploadError)
+          throw uploadError
+        }
+        
+        const { data } = supabase.storage
+          .from('public-assets')
+          .getPublicUrl(`products/${fileName}`)
+        
+        setFormData((prev) => ({ ...prev, imageUrl: data.publicUrl }))
+      } else {
+        setFormData((prev) => ({ ...prev, imageUrl: '' }))
+      }
     } catch (error) {
-      console.error('Image compression error:', error)
+      console.error('Image upload error:', error)
+      setSubmitError('Gagal upload gambar: ' + (error as Error).message)
     } finally {
       setIsUploading(false)
     }
