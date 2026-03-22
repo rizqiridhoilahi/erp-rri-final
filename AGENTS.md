@@ -288,3 +288,23 @@ CUST-XXX (e.g., CUST-001)
 3. **No authentication yet** - Open access (add later)
 4. **PDF generation** - Using @react-pdf/renderer
 5. **Image compression** - Use browser-image-compression library
+
+---
+
+## MCP Servers (Context7)
+
+This project uses **Context7 MCP** for documentation searches. When you need to search for library documentation:
+
+```
+When you need to search docs, use `context7` tools to find relevant information.
+```
+
+### Available MCP Servers
+- **context7** - Search library documentation (React, Tailwind, Supabase, Drizzle, etc.)
+- **supabase** - Supabase database tools
+
+### Usage Example
+When working with unfamiliar libraries, ask the agent to use Context7:
+- "Search Tailwind CSS v4 documentation for custom color configuration"
+- "Find Supabase auth documentation for email login"
+- "Search Drizzle ORM for migration commands"
