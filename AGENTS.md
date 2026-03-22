@@ -291,20 +291,65 @@ CUST-XXX (e.g., CUST-001)
 
 ---
 
-## MCP Servers (Context7)
+## MCP Servers
 
-This project uses **Context7 MCP** for documentation searches. When you need to search for library documentation:
+This project is configured with MCP (Model Context Protocol) servers for enhanced development capabilities.
+
+### Available MCP Servers
+
+| Server | Purpose | Status |
+|--------|---------|--------|
+| **supabase** | Database tools, schema viewing, query execution | ✅ Active |
+| **context7** | Documentation search (React, Tailwind, Supabase, Drizzle) | ✅ Active |
+
+### Configuration File
+```
+~/.config/opencode/opencode.json
+```
+
+### Supabase MCP Connection
+
+The Supabase MCP server is connected to project: `lgwxelbaxivlutvvmnel`
+
+**Connection URL:**
+```
+https://mcp.supabase.com/mcp?project_ref=lgwxelbaxivlutvvmnel
+```
+
+When working with this project:
+
+```
+Use `supabase` MCP tools to:
+- View database schema and tables
+- Execute queries on Supabase
+- Check table data and relationships
+- View RLS policies and security
+```
+
+### Context7 MCP Usage
 
 ```
 When you need to search docs, use `context7` tools to find relevant information.
-```
 
-### Available MCP Servers
-- **context7** - Search library documentation (React, Tailwind, Supabase, Drizzle, etc.)
-- **supabase** - Supabase database tools
-
-### Usage Example
-When working with unfamiliar libraries, ask the agent to use Context7:
+Examples:
 - "Search Tailwind CSS v4 documentation for custom color configuration"
 - "Find Supabase auth documentation for email login"
 - "Search Drizzle ORM for migration commands"
+- "Look up React Query useMutation examples"
+```
+
+### MCP Authentication
+
+If MCP authentication is needed, run:
+```bash
+opencode mcp auth <server-name>
+opencode mcp list  # List all MCP servers and status
+```
+
+### Quick Reference for Agents
+
+When working in this codebase:
+1. For database operations → Use `supabase` MCP tools
+2. For library documentation → Use `context7` MCP tools
+3. Always check PRD.md for business logic
+4. Follow design system from `stitch/` folder
