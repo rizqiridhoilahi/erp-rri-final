@@ -45,11 +45,25 @@ export function useCreateSupplier() {
   
   return useMutation({
     mutationFn: async (supplier: Record<string, unknown>) => {
-      console.log('Creating supplier with data:', supplier)
+      const dbData: Record<string, unknown> = {
+        name: supplier.name,
+        status: supplier.status,
+        pic_name: supplier.picName,
+        pic_email: supplier.picEmail,
+        pic_phone: supplier.picPhone,
+        office_address: supplier.officeAddress,
+        warehouse_address: supplier.warehouseAddress,
+        store_url: supplier.storeUrl,
+        notes: supplier.notes,
+      }
+      
+      if (supplier.categoryId) {
+        dbData.category_id = supplier.categoryId
+      }
       
       const { data, error } = await supabase
         .from('suppliers')
-        .insert(supplier)
+        .insert(dbData)
         .select()
         .single()
       
@@ -58,7 +72,6 @@ export function useCreateSupplier() {
         throw error
       }
       
-      console.log('Supplier created:', data)
       return data
     },
     onSuccess: () => {
@@ -72,11 +85,25 @@ export function useUpdateSupplier() {
   
   return useMutation({
     mutationFn: async ({ id, ...supplier }: Record<string, unknown> & { id: string }) => {
-      console.log('Updating supplier:', id, supplier)
+      const dbData: Record<string, unknown> = {
+        name: supplier.name,
+        status: supplier.status,
+        pic_name: supplier.picName,
+        pic_email: supplier.picEmail,
+        pic_phone: supplier.picPhone,
+        office_address: supplier.officeAddress,
+        warehouse_address: supplier.warehouseAddress,
+        store_url: supplier.storeUrl,
+        notes: supplier.notes,
+      }
+      
+      if (supplier.categoryId) {
+        dbData.category_id = supplier.categoryId
+      }
       
       const { data, error } = await supabase
         .from('suppliers')
-        .update(supplier)
+        .update(dbData)
         .eq('id', id)
         .select()
         .single()
@@ -86,7 +113,6 @@ export function useUpdateSupplier() {
         throw error
       }
       
-      console.log('Supplier updated:', data)
       return data
     },
     onSuccess: () => {
